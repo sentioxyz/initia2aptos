@@ -4,17 +4,17 @@ import express, { Request, Response } from 'express';
 import {Command} from 'commander';
 import {RESTClient, Tx, TxAPI, Event as InitiaEvent, BlockInfo} from '@initia/initia.js';
 import {Block, LedgerInfo, RoleType, TransactionResponseType, UserTransactionResponse, Event } from "@aptos-labs/ts-sdk";
+import { version } from '../package.json';
 
 // Setup commander for CLI functionality
 const program = new Command();
 program
-    .version('1.0.0')
+    .version(version)
     .description('Initia2Aptos Bridge API')
     .option('-p, --port <number>', 'Port to run the server on', '3000')
     .option('-c, --chain-id <string>', 'Chain ID for Initia', 'echelon-1')
     .option('-e, --endpoint <url>', 'indexer endpoint', 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz');
 
-program.parse();
 
 const options = program.opts();
 
@@ -26,8 +26,29 @@ const rest = new RESTClient(options.endpoint, {
     chainId: options.chainId,
 })
 
+function mapEvents(events: InitiaEvent[]) : Event[] {
+    if (!events || events.length === 0) {
+        return [];
+    }
+    const res: any[] = []
+    for (const e of events) {
+        if (e.type == 'move') {
+            const type = e.attributes.find(kv => kv.key == 'type_tag')?.value
+            const data = e.attributes.find(kv => kv.key == 'data')?.value
+            if (type && data) {
+                res.push({
+                    type,
+                    data: JSON.parse(data)
+                })
+            }
+        }
+    }
+
+    return res
+}
+
+
 const txApi = new TxAPI(rest)
-// Middleware
 
 app.use(express.json());
 
@@ -93,10 +114,11 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
 
             for (let i = 0; i < txs.length; i++) {
                 const tx = txs[i];
+                const version = 10000n * BigInt(tx.height) + BigInt(i)
                 userTxs.push({
                     hash: tx.txhash,
                     type: TransactionResponseType.User,
-                    version: `${tx.height}-${i}`,
+                    version: `${version}`,
                     timestamp: tx.timestamp,
                     success: true,
                     vm_status: '',
@@ -155,34 +177,19 @@ app.get('/', function(req: Request, res: Response) {
         },
         config: {
             endpoint: options.endpoint
-        }
+        },
+        version
     });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Visit http://localhost:${PORT} to access the API`);
-});
+
+program.action(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}, version ${version}`);
+    });
+})
 
 
-function mapEvents(events: InitiaEvent[]) : Event[] {
-    if (!events || events.length === 0) {
-        return [];
-    }
-    const res: any[] = []
-    for (const e of events) {
-        if (e.type == 'move') {
-            const type = e.attributes.find(kv => kv.key == 'type_tag')?.value
-            const data = e.attributes.find(kv => kv.key == 'data')?.value
-            if (type && data) {
-                res.push({
-                    type,
-                    data: JSON.parse(data)
-                })
-            }
-        }
-    }
+program.parse();
 
-   return res
-}
+
