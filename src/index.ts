@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import express, { Request, Response } from 'express';
 import {Command} from 'commander';
 import {RESTClient, Tx, TxAPI, Event as InitiaEvent, BlockInfo} from '@initia/initia.js';
@@ -10,7 +12,7 @@ program
     .description('Initia2Aptos Bridge API')
     .option('-p, --port <number>', 'Port to run the server on', '3000')
     .option('-c, --chain-id <string>', 'Chain ID for Initia', 'echelon-1')
-    .option('-e, --endpoint <url>', 'Initia indexer endpoint', 'https://rest-echelon-1.anvil.asia-southeast.initia.xyz');
+    .option('-e, --endpoint <url>', 'indexer endpoint', 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz');
 
 program.parse();
 
