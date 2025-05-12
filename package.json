@@ -1,0 +1,27 @@
+{
+  "name": "@sentio/initia2aptos",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "dependencies": {
+    "@aptos-labs/ts-sdk": "^2.0.0",
+    "@initia/initia.js": "^1.0.8",
+    "@types/node": "^22.15.17",
+    "commander": "^13.1.0",
+    "express": "^5.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1"
+  }
+}
