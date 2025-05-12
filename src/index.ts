@@ -149,8 +149,8 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
                 block_height: height,
                 block_hash: blockInfo?.block_id?.hash ?? '',
                 block_timestamp: blockTimestamp,
-                first_version: txs.length > 0 ? `${height}-0` : '0',
-                last_version: txs.length > 0 ? `${height}-${txs.length - 1}` : '0',
+                first_version: txs.length > 0 ? userTxs[0].version: '0',
+                last_version: txs.length > 0 ? userTxs[userTxs.length - 1].version : '0',
                 transactions: userTxs
             };
 
