@@ -2,9 +2,9 @@
 
 import express, { Request, Response } from 'express';
 import {Command} from 'commander';
-import {RESTClient, Tx, TxAPI, Event as InitiaEvent, BlockInfo} from '@initia/initia.js';
-import {Block, LedgerInfo, RoleType, TransactionResponseType, UserTransactionResponse, Event } from "@aptos-labs/ts-sdk";
-import { version } from '../package.json';
+import {RESTClient, Tx, TxAPI, Event as InitiaEvent, BlockInfo, TxInfo, Coin, Coins} from '@initia/initia.js';
+import {Block, LedgerInfo, RoleType, TransactionResponseType, UserTransactionResponse, Event, AccountAddress} from "@aptos-labs/ts-sdk";
+import {version} from '../package.json';
 
 // Setup commander for CLI functionality
 const program = new Command();
@@ -26,7 +26,7 @@ const rest = new RESTClient(options.endpoint, {
     chainId: options.chainId,
 })
 
-function mapEvents(events: InitiaEvent[]) : Event[] {
+function mapEvents(events: InitiaEvent[]): Event[] {
     if (!events || events.length === 0) {
         return [];
     }
@@ -53,7 +53,7 @@ const txApi = new TxAPI(rest)
 app.use(express.json());
 
 // V1 endpoint - Latest Initia transaction to Aptos node info
-app.get('/v1', function(req: Request, res: Response) {
+app.get('/v1', function (req: Request, res: Response) {
     (async () => {
         try {
             const blockInfo = await rest.tendermint.blockInfo()
@@ -66,7 +66,7 @@ app.get('/v1', function(req: Request, res: Response) {
                 epoch: '1',
                 ledger_version: header.height,
                 oldest_ledger_version: '1',
-                ledger_timestamp: Date.parse(header.time).valueOf()+"",
+                ledger_timestamp: Date.parse(header.time).valueOf() + "",
                 node_role: RoleType.FULL_NODE,
                 oldest_block_height: '1',
                 block_height: header.height
@@ -85,8 +85,10 @@ app.get('/v1', function(req: Request, res: Response) {
     })();
 });
 
+
+
 // Block by height endpoint - Returns block data in Aptos format
-app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
+app.get('/v1/blocks/by_height/:height', function (req: Request, res: Response) {
     (async () => {
         try {
             const height = req.params.height;
@@ -110,7 +112,6 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
             }
 
             const userTxs: UserTransactionResponse[] = []
-            const gasPrice = await rest.gasPrices()
 
             for (let i = 0; i < txs.length; i++) {
                 const tx = txs[i];
@@ -119,10 +120,10 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
                     hash: tx.txhash,
                     type: TransactionResponseType.User,
                     version: `${version}`,
-                    timestamp: tx.timestamp,
+                    timestamp: Date.parse(tx.timestamp).valueOf().toString(),
                     success: true,
                     vm_status: '',
-                    sender: '',
+                    sender: findSender(tx),
                     sequence_number: '' + i,
                     state_change_hash: '',
                     event_root_hash: '',
@@ -131,7 +132,7 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
                     accumulator_root_hash: '',
                     changes: [],
                     max_gas_amount: tx.gas_wanted + '',
-                    gas_unit_price: gasPrice ? gasPrice.toString() : "",
+                    gas_unit_price: '0',
                     expiration_timestamp_secs: '0',
                     payload: {
                         type: '',
@@ -144,12 +145,12 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
             }
 
             // Map to Aptos Block structure
-            let blockTimestamp =blockInfo?  Date.parse(blockInfo?.block?.header?.time).valueOf() +"" : '';
+            let blockTimestamp = blockInfo ? Date.parse(blockInfo?.block?.header?.time).valueOf() + "" : '';
             const aptosBlock: Block = {
                 block_height: height,
                 block_hash: blockInfo?.block_id?.hash ?? '',
                 block_timestamp: blockTimestamp,
-                first_version: txs.length > 0 ? userTxs[0].version: '0',
+                first_version: txs.length > 0 ? userTxs[0].version : '0',
                 last_version: txs.length > 0 ? userTxs[userTxs.length - 1].version : '0',
                 transactions: userTxs
             };
@@ -168,7 +169,7 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
 });
 
 // Root endpoint
-app.get('/', function(req: Request, res: Response) {
+app.get('/', function (req: Request, res: Response) {
     res.json({
         message: 'Welcome to Initia2Aptos Bridge API',
         endpoints: {
@@ -191,5 +192,18 @@ program.action(() => {
 
 
 program.parse();
+
+
+function findSender(tx: TxInfo): string {
+    for (const msg of  tx.tx.body.messages) {
+        if ("sender" in msg) {
+            // remove init1 prefix
+            const sender =  msg.sender.replace("init1", "")
+            // decode base64 to hex
+            return Buffer.from(sender, 'base64').toString('hex')
+        }
+    }
+    return AccountAddress.ZERO.toString()
+}
 
 
