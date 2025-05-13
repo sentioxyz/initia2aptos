@@ -6,6 +6,7 @@ import {RESTClient, Tx, TxAPI, Event as InitiaEvent, BlockInfo, TxInfo, Coin, Co
 import {Block, LedgerInfo, RoleType, TransactionResponseType, UserTransactionResponse, Event, AccountAddress} from "@aptos-labs/ts-sdk";
 import {version} from '../package.json';
 
+
 // Setup commander for CLI functionality
 const program = new Command();
 program
@@ -66,7 +67,7 @@ app.get('/v1', function (req: Request, res: Response) {
                 epoch: '1',
                 ledger_version: header.height,
                 oldest_ledger_version: '1',
-                ledger_timestamp: Date.parse(header.time).valueOf() + "",
+                ledger_timestamp: parseTimestampToSeconds(header.time),
                 node_role: RoleType.FULL_NODE,
                 oldest_block_height: '1',
                 block_height: header.height
@@ -120,7 +121,7 @@ app.get('/v1/blocks/by_height/:height', function (req: Request, res: Response) {
                     hash: tx.txhash,
                     type: TransactionResponseType.User,
                     version: `${version}`,
-                    timestamp: Date.parse(tx.timestamp).valueOf().toString(),
+                    timestamp: parseTimestampToSeconds(tx.timestamp),
                     success: true,
                     vm_status: '',
                     sender: findSender(tx),
@@ -145,7 +146,7 @@ app.get('/v1/blocks/by_height/:height', function (req: Request, res: Response) {
             }
 
             // Map to Aptos Block structure
-            let blockTimestamp = blockInfo ? Date.parse(blockInfo?.block?.header?.time).valueOf() + "" : '';
+            let blockTimestamp = blockInfo ? parseTimestampToSeconds(blockInfo?.block?.header?.time) : '';
             const aptosBlock: Block = {
                 block_height: height,
                 block_hash: blockInfo?.block_id?.hash ?? '',
@@ -206,4 +207,7 @@ function findSender(tx: TxInfo): string {
     return AccountAddress.ZERO.toString()
 }
 
-
+function parseTimestampToSeconds(timeString: string): string {
+    // Convert milliseconds to seconds by dividing by 1000
+    return Math.floor(Date.parse(timeString) / 1000).toString();
+}
