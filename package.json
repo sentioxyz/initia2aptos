@@ -1,6 +1,6 @@
 {
   "name": "@sentio/initia2aptos",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "",
   "bin": {
     "initia2aptos": "dist/index.js"

@@ -62,7 +62,7 @@ app.get('/v1', function(req: Request, res: Response) {
 
             // map latestTxInfo to aptos LedgerInfo
             const aptosLedgerInfo: LedgerInfo = {
-                chain_id: header.chain_id,
+                chain_id: 1, // requires number
                 epoch: '1',
                 ledger_version: header.height,
                 oldest_ledger_version: '1',
