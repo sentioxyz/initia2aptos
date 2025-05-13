@@ -222,7 +222,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Fallback endpoint for all unmatched routes
-app.all('*', (req: Request, res: Response) => {
+app.all('*splat', (req: Request, res: Response) => {
     res.status(404).json({
         status: 'error',
         error_code: 'not_supported',
