@@ -67,7 +67,7 @@ app.get('/v1', function (req: Request, res: Response) {
                 epoch: '1',
                 ledger_version: header.height,
                 oldest_ledger_version: '1',
-                ledger_timestamp: parseTimestampToSeconds(header.time),
+                ledger_timestamp: parseTimestampToMicroSeconds(header.time),
                 node_role: RoleType.FULL_NODE,
                 oldest_block_height: '1',
                 block_height: header.height
@@ -121,7 +121,7 @@ app.get('/v1/blocks/by_height/:height', function (req: Request, res: Response) {
                     hash: tx.txhash,
                     type: TransactionResponseType.User,
                     version: `${version}`,
-                    timestamp: parseTimestampToSeconds(tx.timestamp),
+                    timestamp: parseTimestampToMicroSeconds(tx.timestamp),
                     success: true,
                     vm_status: '',
                     sender: findSender(tx),
@@ -146,7 +146,7 @@ app.get('/v1/blocks/by_height/:height', function (req: Request, res: Response) {
             }
 
             // Map to Aptos Block structure
-            let blockTimestamp = blockInfo ? parseTimestampToSeconds(blockInfo?.block?.header?.time) : '';
+            let blockTimestamp = blockInfo ? parseTimestampToMicroSeconds(blockInfo?.block?.header?.time) : '';
             const aptosBlock: Block = {
                 block_height: height,
                 block_hash: blockInfo?.block_id?.hash ?? '',
@@ -207,7 +207,7 @@ function findSender(tx: TxInfo): string {
     return AccountAddress.ZERO.toString()
 }
 
-function parseTimestampToSeconds(timeString: string): string {
-    // Convert milliseconds to seconds by dividing by 1000
-    return Math.floor(Date.parse(timeString) / 1000).toString();
+function parseTimestampToMicroSeconds(timeString: string): string {
+
+    return Math.floor(Date.parse(timeString) * 1000).toString();
 }
