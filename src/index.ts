@@ -119,7 +119,7 @@ app.get('/v1/blocks/by_height/:height', function(req: Request, res: Response) {
                     hash: tx.txhash,
                     type: TransactionResponseType.User,
                     version: `${version}`,
-                    timestamp: tx.timestamp,
+                    timestamp: Date.parse(tx.timestamp).valueOf().toString(),
                     success: true,
                     vm_status: '',
                     sender: '',
