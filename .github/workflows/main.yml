@@ -30,6 +30,6 @@ jobs:
         # Update package.json with the new version
         pnpm version $new_version --git-tag-version=false
         # Publish the package with the 'rc' tag
-        pnpm publish --tag rc
+        pnpm publish --tag rc --no-git-checks
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
