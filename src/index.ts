@@ -212,11 +212,21 @@ app.get('/', (req: Request, res: Response) => {
         endpoints: {
             nodeInfo: '/v1',
             blockByHeight: '/v1/blocks/by_height/:height', // Returns block data in Aptos format
+            accountModules: '/v1/accounts/:address/modules'
         },
         config: {
             endpoint: options.endpoint
         },
         version
+    });
+});
+
+// Fallback endpoint for all unmatched routes
+app.all('*', (req: Request, res: Response) => {
+    res.status(404).json({
+        status: 'error',
+        error_code: 'not_supported',
+        message: 'Not supported',
     });
 });
 
