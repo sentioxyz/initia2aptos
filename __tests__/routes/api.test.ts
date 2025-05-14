@@ -148,11 +148,11 @@ describe('API Routes', () => {
       expect(response.body).toHaveProperty('block_height', '123');
       expect(response.body).toHaveProperty('block_hash', 'mock-block-hash-123');
       expect(response.body).toHaveProperty('transactions');
-      expect(response.body.transactions).toHaveLength(1);
-      expect(response.body.transactions[0]).toHaveProperty('hash', 'mock-tx-hash-1');
-      expect(response.body.transactions[0]).toHaveProperty('events');
-      expect(response.body.transactions[0].events).toHaveLength(1);
-      expect(response.body.transactions[0].events[0]).toHaveProperty('type', '0x1::coin::Transfer');
+      expect(response.body.transactions).toHaveLength(2);
+      expect(response.body.transactions[1]).toHaveProperty('hash', 'mock-tx-hash-1');
+      expect(response.body.transactions[1]).toHaveProperty('events');
+      expect(response.body.transactions[1].events).toHaveLength(1);
+      expect(response.body.transactions[1].events[0]).toHaveProperty('type', '0x1::coin::Transfer');
     });
 
     it('should return 400 for invalid height parameter', async () => {
