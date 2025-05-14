@@ -1,6 +1,6 @@
 {
   "name": "@sentio/initia2aptos",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "",
   "bin": {
     "initia2aptos": "dist/index.js"
@@ -23,12 +23,14 @@
     "@aptos-labs/ts-sdk": "^2.0.0",
     "@initia/initia.js": "^1.0.8",
     "@types/node": "^22.15.17",
+    "apicache": "^1.6.3",
     "commander": "^13.1.0",
     "express": "^5.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@types/apicache": "^1.6.7",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/supertest": "^6.0.3",

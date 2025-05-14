@@ -8,6 +8,7 @@ import {
   UserTransactionResponse,
   MoveModuleBytecode
 } from "@aptos-labs/ts-sdk";
+import apicache from 'apicache';
 import { version } from '../package.json';
 import { findSender, parseTimestampToMicroSeconds } from './utils';
 import { mapEvents } from './eventMapper';
@@ -17,13 +18,17 @@ export interface AppConfig {
   port: string;
   chainId: string;
   endpoint: string;
+  cacheEnabled?: boolean;
+  cacheDuration?: string;
 }
 
 // Default configuration
 const DEFAULT_CONFIG: AppConfig = {
   port: '3000',
   chainId: 'echelon-1',
-  endpoint: 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz'
+  endpoint: 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz',
+  cacheEnabled: true,
+  cacheDuration: '5 minutes'
 };
 
 /**
@@ -44,8 +49,32 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
 
   app.use(express.json());
 
+  // Initialize cache middleware if enabled
+  const cache = apicache.middleware;
+  const cacheMiddleware = config.cacheEnabled ? cache(config.cacheDuration || '5 minutes') : (req: Request, res: Response, next: Function) => next();
+
+  // Add cache performance route if caching is enabled
+  if (config.cacheEnabled) {
+    app.get('/api/cache/performance', (req: Request, res: Response) => {
+      res.json(apicache.getPerformance());
+    });
+
+    app.get('/api/cache/index', (req: Request, res: Response) => {
+      res.json(apicache.getIndex());
+    });
+
+    app.get('/api/cache/clear/:target', (req: Request, res: Response) => {
+      res.json(apicache.clear(req.params.target));
+    });
+
+    app.get('/api/cache/clear', (req: Request, res: Response) => {
+      const target = req.query.target as string;
+      res.json(apicache.clear(target || undefined));
+    });
+  }
+
   // V1 endpoint - Latest Initia transaction to Aptos node info
-  app.get('/v1', async function (req: Request, res: Response) {
+  app.get('/v1', cacheMiddleware, async function (req: Request, res: Response) {
     try {
       const blockInfo = await rest.tendermint.blockInfo();
       const header = blockInfo.block.header as any;
@@ -74,7 +103,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
   });
 
   // Block by height endpoint - Returns block data in Aptos format
-  app.get('/v1/blocks/by_height/:height', async (req: Request, res: Response): Promise<void> => {
+  app.get('/v1/blocks/by_height/:height', cacheMiddleware, async (req: Request, res: Response): Promise<void> => {
     try {
       const height = req.params.height;
 
@@ -153,7 +182,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     }
   });
 
-  app.get('/v1/accounts/:address/modules', async (req: Request, res: Response) => {
+  app.get('/v1/accounts/:address/modules', cacheMiddleware, async (req: Request, res: Response) => {
     try {
       let next: string | undefined = undefined;
       let result: MoveModuleBytecode[] = [];
@@ -187,6 +216,16 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         nodeInfo: '/v1',
         blockByHeight: '/v1/blocks/by_height/:height', // Returns block data in Aptos format
         accountModules: '/v1/accounts/:address/modules'
+      },
+      cache: {
+        enabled: config.cacheEnabled,
+        duration: config.cacheDuration,
+        endpoints: config.cacheEnabled ? {
+          performance: '/api/cache/performance',
+          index: '/api/cache/index',
+          clear: '/api/cache/clear',
+          clearTarget: '/api/cache/clear/:target'
+        } : null
       },
       config: {
         endpoint: config.endpoint

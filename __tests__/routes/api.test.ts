@@ -1,8 +1,30 @@
 import request from 'supertest';
 import { Express } from 'express';
 import { RESTClient, TxAPI, MoveAPI } from '@initia/initia.js';
+import apicache from 'apicache';
 
 // Mock the dependencies
+jest.mock('apicache', () => {
+  return {
+    middleware: jest.fn().mockImplementation((duration) => {
+      return (req: any, res: any, next: any) => next();
+    }),
+    getPerformance: jest.fn().mockReturnValue({
+      hits: 10,
+      misses: 5,
+      ratio: 0.67
+    }),
+    getIndex: jest.fn().mockReturnValue({
+      all: ['test1', 'test2'],
+      groups: { testGroup: ['test1'] }
+    }),
+    clear: jest.fn().mockImplementation((target) => {
+      return { status: 'cleared', target: target || 'all' };
+    }),
+    options: jest.fn().mockReturnThis()
+  };
+});
+
 jest.mock('@initia/initia.js', () => {
   return {
     RESTClient: jest.fn().mockImplementation(() => ({
@@ -100,6 +122,7 @@ describe('API Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('message', 'Welcome to Initia2Aptos Bridge API');
       expect(response.body).toHaveProperty('endpoints');
+      expect(response.body).toHaveProperty('cache');
       expect(response.body.endpoints).toHaveProperty('nodeInfo', '/v1');
       expect(response.body.endpoints).toHaveProperty('blockByHeight', '/v1/blocks/by_height/:height');
     });
@@ -150,6 +173,51 @@ describe('API Routes', () => {
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toHaveProperty('abi');
       expect(response.body[0]).toHaveProperty('bytecode', 'mock-bytecode');
+    });
+  });
+
+  describe('Cache endpoints', () => {
+    it('should return cache performance statistics', async () => {
+      const response = await request(app).get('/api/cache/performance');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('hits', 10);
+      expect(response.body).toHaveProperty('misses', 5);
+      expect(response.body).toHaveProperty('ratio', 0.67);
+    });
+
+    it('should return cache index', async () => {
+      const response = await request(app).get('/api/cache/index');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('all');
+      expect(response.body.all).toHaveLength(2);
+      expect(response.body).toHaveProperty('groups');
+      expect(response.body.groups).toHaveProperty('testGroup');
+    });
+
+    it('should clear cache', async () => {
+      const response = await request(app).get('/api/cache/clear');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'cleared');
+      expect(response.body).toHaveProperty('target', 'all');
+    });
+
+    it('should clear specific cache target', async () => {
+      const response = await request(app).get('/api/cache/clear/testTarget');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'cleared');
+      expect(response.body).toHaveProperty('target', 'testTarget');
+    });
+
+    it('should clear cache with query parameter', async () => {
+      const response = await request(app).get('/api/cache/clear?target=queryTarget');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'cleared');
+      expect(response.body).toHaveProperty('target', 'queryTarget');
     });
   });
 
