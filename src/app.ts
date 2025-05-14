@@ -6,7 +6,7 @@ import {
   RoleType,
   TransactionResponseType,
   UserTransactionResponse,
-  MoveModuleBytecode
+  MoveModuleBytecode, BlockMetadataTransactionResponse
 } from "@aptos-labs/ts-sdk";
 import apicache from 'apicache';
 import { version } from '../package.json';
@@ -130,7 +130,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
 
       for (let i = 0; i < txs.length; i++) {
         const tx = txs[i];
-        const version = 10000n * BigInt(tx.height) + BigInt(i);
+        const version = 10000n * BigInt(tx.height) + BigInt(i+ 1);
         userTxs.push({
           hash: tx.txhash,
           type: TransactionResponseType.User,
@@ -160,14 +160,37 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       }
 
       // Map to Aptos Block structure
-      let blockTimestamp = blockInfo ? parseTimestampToMicroSeconds(blockInfo?.block?.header?.time) : '';
+      const blockTimestamp = blockInfo ? parseTimestampToMicroSeconds(blockInfo?.block?.header?.time) : '';
+
+      const blockMetaTx: BlockMetadataTransactionResponse = {
+        type: TransactionResponseType.BlockMetadata,
+        id: blockInfo?.block_id?.hash ?? '',
+        version: `${10000n * BigInt(height)}`,
+        hash: blockInfo?.block_id?.hash ?? '',
+        state_change_hash: '',
+        event_root_hash: '',
+        state_checkpoint_hash: null,
+        gas_used: '0',
+        success: true,
+        vm_status: '',
+        accumulator_root_hash: '',
+        changes: [],
+        timestamp: blockTimestamp,
+        epoch: '',
+        round: '',
+        events: [],
+        previous_block_votes_bitvec: [],
+        proposer: '',
+        failed_proposer_indices: []
+      }
+
       const aptosBlock: Block = {
         block_height: height,
         block_hash: blockInfo?.block_id?.hash ?? '',
         block_timestamp: blockTimestamp,
         first_version: txs.length > 0 ? userTxs[0].version : '0',
         last_version: txs.length > 0 ? userTxs[userTxs.length - 1].version : '0',
-        transactions: userTxs
+        transactions: [blockMetaTx, ...userTxs]
       };
 
       // Return the response
