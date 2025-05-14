@@ -6,7 +6,7 @@ import {
   RoleType,
   TransactionResponseType,
   UserTransactionResponse,
-  MoveModuleBytecode, BlockMetadataTransactionResponse
+  MoveModuleBytecode, BlockMetadataTransactionResponse, AccountAddress
 } from "@aptos-labs/ts-sdk";
 import apicache from 'apicache';
 import { version } from '../package.json';
@@ -176,11 +176,11 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         accumulator_root_hash: '',
         changes: [],
         timestamp: blockTimestamp,
-        epoch: '',
-        round: '',
+        epoch: '0',
+        round: '0',
         events: [],
         previous_block_votes_bitvec: [],
-        proposer: '',
+        proposer: AccountAddress.ZERO.toString(),
         failed_proposer_indices: []
       }
 
