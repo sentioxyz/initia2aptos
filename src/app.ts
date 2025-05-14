@@ -184,12 +184,14 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         failed_proposer_indices: []
       }
 
+      const transactions = [blockMetaTx, ...userTxs]
+
       const aptosBlock: Block = {
         block_height: height,
         block_hash: blockInfo?.block_id?.hash ?? '',
         block_timestamp: blockTimestamp,
-        first_version: txs.length > 0 ? userTxs[0].version : '0',
-        last_version: txs.length > 0 ? userTxs[userTxs.length - 1].version : '0',
+        first_version: transactions.length > 0 ? transactions[0].version : '0',
+        last_version: transactions.length > 0 ? transactions[transactions.length - 1].version : '0',
         transactions: [blockMetaTx, ...userTxs]
       };
 
