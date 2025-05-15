@@ -81,11 +81,15 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       const blockInfo = await rest.tendermint.blockInfo();
       const header = blockInfo.block.header as any;
 
+      const txs = await txApi.txInfosByHeight(parseInt(header.height));
+
+      const latestTxVersion = 10000n * BigInt(header.height) + BigInt(txs.length);
+
       // map latestTxInfo to aptos LedgerInfo
       const aptosLedgerInfo: LedgerInfo = {
         chain_id: 1, // requires number
         epoch: '1',
-        ledger_version: header.height,
+        ledger_version: latestTxVersion.toString(),
         oldest_ledger_version: '1',
         ledger_timestamp: parseTimestampToMicroSeconds(header.time),
         node_role: RoleType.FULL_NODE,
