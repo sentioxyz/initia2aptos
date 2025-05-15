@@ -134,7 +134,7 @@ describe('API Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('chain_id', 1);
-      expect(response.body).toHaveProperty('ledger_version', '1000');
+      expect(response.body).toHaveProperty('ledger_version', '10000000');
       expect(response.body).toHaveProperty('ledger_timestamp');
       expect(response.body).toHaveProperty('node_role');
     });

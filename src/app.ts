@@ -82,7 +82,6 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       const header = blockInfo.block.header as any;
 
       const txs = await txApi.txInfosByHeight(parseInt(header.height));
-
       const latestTxVersion = 10000n * BigInt(header.height) + BigInt(txs.length);
 
       // map latestTxInfo to aptos LedgerInfo
