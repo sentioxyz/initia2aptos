@@ -1,19 +1,17 @@
 import express, {Request, Response} from 'express';
-import {MoveAPI, RESTClient, TxAPI} from '@initia/initia.js';
+import {BlockInfo, MoveAPI, RESTClient, TxAPI} from '@initia/initia.js';
 import {
-  AccountAddress,
   Block,
   BlockMetadataTransactionResponse,
   LedgerInfo,
   MoveModuleBytecode,
   RoleType,
-  TransactionResponseType,
   UserTransactionResponse
 } from "@aptos-labs/ts-sdk";
 import apicache from 'apicache';
 import {version} from '../package.json';
 import {parseTimestampToMicroSeconds} from './utils';
-import {toAptoTransaction} from "./mapper";
+import {toAptoTransaction, toBlockTx} from "./mapper";
 
 // Configuration interface
 export interface AppConfig {
@@ -122,13 +120,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
 
       // Fetch transactions by height
       const txs = await txApi.txInfosByHeight(parseInt(height));
-
-      let blockInfo = null;
-      try { // Fetch block information to get hash and timestamp
-        blockInfo = await rest.tendermint.blockInfo(parseInt(height));
-      } catch (e) {
-        // ignore
-      }
+      const blockInfo = await rest.tendermint.blockInfo(parseInt(height));
 
       const userTxs: UserTransactionResponse[] = [];
 
@@ -138,37 +130,13 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         userTxs.push(toAptoTransaction(tx, version, i));
       }
 
-      // Map to Aptos Block structure
-      const blockTimestamp = blockInfo ? parseTimestampToMicroSeconds(blockInfo?.block?.header?.time) : '';
-
-      const blockMetaTx: BlockMetadataTransactionResponse = {
-        type: TransactionResponseType.BlockMetadata,
-        id: blockInfo?.block_id?.hash ?? '',
-        version: `${10000n * BigInt(height)}`,
-        hash: blockInfo?.block_id?.hash ?? '',
-        state_change_hash: '',
-        event_root_hash: '',
-        state_checkpoint_hash: null,
-        gas_used: '0',
-        success: true,
-        vm_status: '',
-        accumulator_root_hash: '',
-        changes: [],
-        timestamp: blockTimestamp,
-        epoch: '0',
-        round: '0',
-        events: [],
-        previous_block_votes_bitvec: [],
-        proposer: AccountAddress.ZERO.toString(),
-        failed_proposer_indices: []
-      }
-
+      const blockMetaTx: BlockMetadataTransactionResponse = toBlockTx(blockInfo)
       const transactions = [blockMetaTx, ...userTxs]
 
       const aptosBlock: Block = {
         block_height: height,
         block_hash: blockInfo?.block_id?.hash ?? '',
-        block_timestamp: blockTimestamp,
+        block_timestamp: blockMetaTx.timestamp,
         first_version: transactions.length > 0 ? transactions[0].version : '0',
         last_version: transactions.length > 0 ? transactions[transactions.length - 1].version : '0',
         transactions: [blockMetaTx, ...userTxs]
@@ -217,10 +185,16 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       const version = req.params.version;
       // convert version back to block height and index
       const height = Math.floor(parseInt(version) / 10000);
-      const index = parseInt(version) % 10000 - 1;
-      const txs = await txApi.txInfosByHeight(height);
-      const tx = txs[index];
-      res.json(toAptoTransaction(tx, BigInt(version), index));
+
+      const index = parseInt(version) % 10000;
+      if (index == 0) { // block metadata transaction
+        const blockInfo = await rest.tendermint.blockInfo(height);
+        res.json(toBlockTx(blockInfo));
+      } else {
+        const txs = await txApi.txInfosByHeight(height);
+        const tx = txs[index - 1];
+        res.json(toAptoTransaction(tx, BigInt(version), index - 1));
+      }
     } catch (error) {
       console.error(`Error fetching transaction by version ${req.params.version}:`, error);
       res.status(500).json({

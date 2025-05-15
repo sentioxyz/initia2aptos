@@ -1,5 +1,11 @@
-import {Event as InitiaEvent, TxInfo} from '@initia/initia.js';
-import {Event, TransactionResponseType, UserTransactionResponse} from '@aptos-labs/ts-sdk';
+import {BlockInfo, Event as InitiaEvent, TxInfo} from '@initia/initia.js';
+import {
+  AccountAddress,
+  BlockMetadataTransactionResponse,
+  Event,
+  TransactionResponseType,
+  UserTransactionResponse
+} from '@aptos-labs/ts-sdk';
 import {findSender, parseTimestampToMicroSeconds} from "./utils";
 
 export function mapEvents(events: InitiaEvent[]): Event[] {
@@ -50,5 +56,33 @@ export function toAptoTransaction(tx: TxInfo, version: bigint, seq: number): Use
       arguments: []
     },
     events: mapEvents(tx.events)
+  };
+}
+
+
+export function toBlockTx(blockInfo: BlockInfo): BlockMetadataTransactionResponse {
+  const blockTimestamp = blockInfo ? parseTimestampToMicroSeconds(blockInfo?.block?.header?.time) : '';
+
+  const height = blockInfo?.block?.header?.height;
+  return {
+    type: TransactionResponseType.BlockMetadata,
+    id: blockInfo?.block_id?.hash ?? '',
+    version: `${10000n * BigInt(height)}`,
+    hash: blockInfo?.block_id?.hash ?? '',
+    state_change_hash: '',
+    event_root_hash: '',
+    state_checkpoint_hash: null,
+    gas_used: '0',
+    success: true,
+    vm_status: '',
+    accumulator_root_hash: '',
+    changes: [],
+    timestamp: blockTimestamp,
+    epoch: '0',
+    round: '0',
+    events: [],
+    previous_block_votes_bitvec: [],
+    proposer: AccountAddress.ZERO.toString(),
+    failed_proposer_indices: []
   };
 }
