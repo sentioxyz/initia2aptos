@@ -1,17 +1,19 @@
-import express, { Request, Response } from 'express';
-import { RESTClient, TxAPI, MoveAPI } from '@initia/initia.js';
+import express, {Request, Response} from 'express';
+import {MoveAPI, RESTClient, TxAPI} from '@initia/initia.js';
 import {
+  AccountAddress,
   Block,
+  BlockMetadataTransactionResponse,
   LedgerInfo,
+  MoveModuleBytecode,
   RoleType,
   TransactionResponseType,
-  UserTransactionResponse,
-  MoveModuleBytecode, BlockMetadataTransactionResponse, AccountAddress
+  UserTransactionResponse
 } from "@aptos-labs/ts-sdk";
 import apicache from 'apicache';
-import { version } from '../package.json';
-import { findSender, parseTimestampToMicroSeconds } from './utils';
-import { mapEvents } from './eventMapper';
+import {version} from '../package.json';
+import {parseTimestampToMicroSeconds} from './utils';
+import {toAptoTransaction} from "./mapper";
 
 // Configuration interface
 export interface AppConfig {
@@ -30,6 +32,8 @@ const DEFAULT_CONFIG: AppConfig = {
   cacheEnabled: true,
   cacheDuration: '5 minutes'
 };
+
+
 
 /**
  * Creates an Express application with the given configuration
@@ -131,32 +135,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       for (let i = 0; i < txs.length; i++) {
         const tx = txs[i];
         const version = 10000n * BigInt(tx.height) + BigInt(i+ 1);
-        userTxs.push({
-          hash: tx.txhash,
-          type: TransactionResponseType.User,
-          version: `${version}`,
-          timestamp: parseTimestampToMicroSeconds(tx.timestamp),
-          success: true,
-          vm_status: '',
-          sender: findSender(tx),
-          sequence_number: '' + i,
-          state_change_hash: '',
-          event_root_hash: '',
-          state_checkpoint_hash: null,
-          gas_used: '' + tx.gas_used,
-          accumulator_root_hash: '',
-          changes: [],
-          max_gas_amount: tx.gas_wanted + '',
-          gas_unit_price: '0',
-          expiration_timestamp_secs: '0',
-          payload: {
-            type: '',
-            function: '_::_::_',
-            type_arguments: [],
-            arguments: []
-          },
-          events: mapEvents(tx.events)
-        });
+        userTxs.push(toAptoTransaction(tx, version, i));
       }
 
       // Map to Aptos Block structure
@@ -227,6 +206,25 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       console.error(`Error fetching modules for account ${req.params.address}:`, error);
       res.status(500).json({
         message: `Failed to fetch modules for account ${req.params.address}`,
+        error_code: 'internal_error',
+        vm_error_code: error
+      });
+    }
+  });
+
+  app.get('/v1/transactions/by_version/:version', cacheMiddleware, async (req: Request, res: Response) => {
+    try {
+      const version = req.params.version;
+      // convert version back to block height and index
+      const height = Math.floor(parseInt(version) / 10000);
+      const index = parseInt(version) % 10000 - 1;
+      const txs = await txApi.txInfosByHeight(height);
+      const tx = txs[index];
+      res.json(toAptoTransaction(tx, BigInt(version), index));
+    } catch (error) {
+      console.error(`Error fetching transaction by version ${req.params.version}:`, error);
+      res.status(500).json({
+        message: `Failed to fetch transaction by version ${req.params.version}`,
         error_code: 'internal_error',
         vm_error_code: error
       });
