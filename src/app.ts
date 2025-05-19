@@ -228,6 +228,28 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         }
     });
 
+    app.post('/v1/view', async (req: Request, res: Response) => {
+        try {
+            const body = req.body;
+            const [address, module, func] = body['function'].split('::');
+            const result = await moveApi.view(
+                address,
+                module,
+                func,
+                body.type_arguments ?? [],
+                body.arguments ?? []
+            );
+            res.json(result.data);
+        } catch (error) {
+            console.error(`Error simulating transaction:`, error);
+            res.status(500).json({
+                message: `Failed to call view function`,
+                error_code: 'internal_error',
+                vm_error_code: error
+            });
+        }
+    })
+
     app.get('/v1/transactions/by_version/:version', async (req: Request, res: Response) => {
         try {
             const version = req.params.version?.trim();
@@ -289,6 +311,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
             version
         });
     });
+
 
     // Fallback endpoint for all unmatched routes
     app.all('*splat', (req: Request, res: Response) => {
