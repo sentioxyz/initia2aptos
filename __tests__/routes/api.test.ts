@@ -1,32 +1,26 @@
 import request from 'supertest';
 import { Express } from 'express';
 import { RESTClient, TxAPI, MoveAPI } from '@initia/initia.js';
-import apicache from 'apicache';
 
-// Mock the dependencies
-jest.mock('apicache', () => {
+// Mock axios-cache-interceptor
+jest.mock('axios-cache-interceptor', () => {
   return {
-    middleware: jest.fn().mockImplementation((duration) => {
-      return (req: any, res: any, next: any) => next();
-    }),
-    getPerformance: jest.fn().mockReturnValue({
-      hits: 10,
-      misses: 5,
-      ratio: 0.67
-    }),
-    getIndex: jest.fn().mockReturnValue({
-      all: ['test1', 'test2'],
-      groups: { testGroup: ['test1'] }
-    }),
-    clear: jest.fn().mockImplementation((target) => {
-      return { status: 'cleared', target: target || 'all' };
-    }),
-    options: jest.fn().mockReturnThis()
+    buildMemoryStorage: jest.fn().mockImplementation(() => ({})),
+    setupCache: jest.fn().mockImplementation((axios) => axios)
   };
 });
 
 jest.mock('@initia/initia.js', () => {
+  // Mock APIRequester class
+  class MockAPIRequester {
+    endpoint: string;
+    constructor(endpoint: string) {
+      this.endpoint = endpoint;
+    }
+  }
+
   return {
+    APIRequester: MockAPIRequester,
     RESTClient: jest.fn().mockImplementation(() => ({
       tendermint: {
         blockInfo: jest.fn().mockImplementation((height?: number) => {
@@ -53,65 +47,77 @@ jest.mock('@initia/initia.js', () => {
           };
         })
       },
-      apiRequester: {}
-    })),
-    TxAPI: jest.fn().mockImplementation(() => ({
-      txInfosByHeight: jest.fn().mockImplementation((height: number) => {
-        if (height === 123) {
+      apiRequester: {},
+      tx: {
+        txInfosByHeight: jest.fn().mockImplementation((height: number) => {
+          if (height === 123) {
+            return [
+              {
+                height: 123,
+                txhash: 'mock-tx-hash-1',
+                timestamp: '2023-01-01T12:00:00.000Z',
+                gas_used: 1000,
+                gas_wanted: 2000,
+                tx: {
+                  body: {
+                    messages: [
+                      { sender: 'init1YW5lcg==' }
+                    ]
+                  }
+                },
+                events: [
+                  {
+                    type: 'move',
+                    attributes: [
+                      { key: 'type_tag', value: '0x1::coin::Transfer' },
+                      { key: 'data', value: '{"amount":"100"}' }
+                    ]
+                  }
+                ]
+              }
+            ];
+          }
+          return [];
+        })
+      },
+      move: {
+        modules: jest.fn().mockImplementation((address: string) => {
           return [
-            {
-              height: 123,
-              txhash: 'mock-tx-hash-1',
-              timestamp: '2023-01-01T12:00:00.000Z',
-              gas_used: 1000,
-              gas_wanted: 2000,
-              tx: {
-                body: {
-                  messages: [
-                    { sender: 'init1YW5lcg==' }
-                  ]
-                }
-              },
-              events: [
-                {
-                  type: 'move',
-                  attributes: [
-                    { key: 'type_tag', value: '0x1::coin::Transfer' },
-                    { key: 'data', value: '{"amount":"100"}' }
-                  ]
-                }
-              ]
-            }
+            [
+              {
+                abi: JSON.stringify({ name: 'TestModule', functions: [] }),
+                raw_bytes: 'mock-bytecode'
+              }
+            ],
+            { next_key: undefined }
           ];
-        }
-        return [];
-      })
-    })),
-    MoveAPI: jest.fn().mockImplementation(() => ({
-      modules: jest.fn().mockImplementation((address: string) => {
-        return [
-          [
-            {
-              abi: JSON.stringify({ name: 'TestModule', functions: [] }),
-              raw_bytes: 'mock-bytecode'
-            }
-          ],
-          { next_key: undefined }
-        ];
-      })
+        }),
+        module: jest.fn().mockImplementation(() => ({
+          abi: JSON.stringify({ name: 'TestModule', functions: [] }),
+          raw_bytes: 'mock-bytecode'
+        })),
+        resource: jest.fn().mockImplementation(() => ({
+          type: 'test::resource::Type',
+          data: { value: 100 }
+        }))
+      }
     }))
   };
 });
 
-// Import the app module
+// Import the createApp function
+import { createApp } from '../../src/app';
+
 let app: Express;
 
 describe('API Routes', () => {
   beforeAll(() => {
-    // Dynamically import the app to ensure mocks are set up first
-    jest.isolateModules(() => {
-      const { app: testApp } = require('../../src/app');
-      app = testApp;
+    // Create the app with default config
+    app = createApp({
+      port: '3000',
+      chainId: 'test-chain',
+      endpoint: 'http://test-endpoint',
+      cacheEnabled: false
     });
   });
 
@@ -122,7 +128,6 @@ describe('API Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('message', 'Welcome to Initia2Aptos Bridge API');
       expect(response.body).toHaveProperty('endpoints');
-      expect(response.body).toHaveProperty('cache');
       expect(response.body.endpoints).toHaveProperty('nodeInfo', '/v1');
       expect(response.body.endpoints).toHaveProperty('blockByHeight', '/v1/blocks/by_height/:height');
     });
@@ -173,51 +178,6 @@ describe('API Routes', () => {
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toHaveProperty('abi');
       expect(response.body[0]).toHaveProperty('bytecode', 'mock-bytecode');
-    });
-  });
-
-  describe('Cache endpoints', () => {
-    it('should return cache performance statistics', async () => {
-      const response = await request(app).get('/api/cache/performance');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('hits', 10);
-      expect(response.body).toHaveProperty('misses', 5);
-      expect(response.body).toHaveProperty('ratio', 0.67);
-    });
-
-    it('should return cache index', async () => {
-      const response = await request(app).get('/api/cache/index');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('all');
-      expect(response.body.all).toHaveLength(2);
-      expect(response.body).toHaveProperty('groups');
-      expect(response.body.groups).toHaveProperty('testGroup');
-    });
-
-    it('should clear cache', async () => {
-      const response = await request(app).get('/api/cache/clear');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'cleared');
-      expect(response.body).toHaveProperty('target', 'all');
-    });
-
-    it('should clear specific cache target', async () => {
-      const response = await request(app).get('/api/cache/clear/testTarget');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'cleared');
-      expect(response.body).toHaveProperty('target', 'testTarget');
-    });
-
-    it('should clear cache with query parameter', async () => {
-      const response = await request(app).get('/api/cache/clear?target=queryTarget');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'cleared');
-      expect(response.body).toHaveProperty('target', 'queryTarget');
     });
   });
 

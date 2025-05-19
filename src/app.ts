@@ -45,12 +45,10 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
 
     let apiRequester: APIRequester
 
-    // Add cache performance route if caching is enabled
-    if (config.cacheEnabled) {
-        apiRequester = new CachedAPIRequester(config)
-    } else {
-        apiRequester = new APIRequester(config.endpoint);
-    }
+    // Set up API requester based on cache configuration
+    apiRequester = config.cacheEnabled
+        ? new CachedAPIRequester(config)
+        : new APIRequester(config.endpoint);
 
     // Initialize REST client with the configured endpoint
     const rest = new RESTClient(config.endpoint, {
@@ -221,9 +219,9 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                 data
             });
         } catch (error) {
-            console.error(`Error fetching modules for account ${req.params.address}:`, error);
+            console.error(`Error fetching resource for account ${req.params.address}:`, error);
             res.status(500).json({
-                message: `Failed to fetch modules for account ${req.params.address}`,
+                message: `Failed to fetch resource for account ${req.params.address}`,
                 error_code: 'internal_error',
                 vm_error_code: error
             });
@@ -284,16 +282,6 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                 nodeInfo: '/v1',
                 blockByHeight: '/v1/blocks/by_height/:height', // Returns block data in Aptos format
                 accountModules: '/v1/accounts/:address/modules'
-            },
-            cache: {
-                enabled: config.cacheEnabled,
-                duration: config.cacheDuration,
-                endpoints: config.cacheEnabled ? {
-                    performance: '/api/cache/performance',
-                    index: '/api/cache/index',
-                    clear: '/api/cache/clear',
-                    clearTarget: '/api/cache/clear/:target'
-                } : null
             },
             config: {
                 endpoint: config.endpoint
