@@ -1,17 +1,21 @@
 import express, {Request, Response} from 'express';
-import {BlockInfo, MoveAPI, RESTClient, TxAPI} from '@initia/initia.js';
+import {APIRequester, RESTClient} from '@initia/initia.js';
 import {
-    Block, BlockEpilogueTransactionResponse,
+    Block,
+    BlockEpilogueTransactionResponse,
     BlockMetadataTransactionResponse,
     LedgerInfo,
     MoveModuleBytecode,
-    RoleType, TransactionResponseType,
+    RoleType,
+    TransactionResponseType,
     UserTransactionResponse
 } from "@aptos-labs/ts-sdk";
-import apicache from 'apicache';
 import {version} from '../package.json';
-import {parseTimestampToMicroSeconds} from './utils';
+import {parseTimestampToMicroSeconds, toDurationMs} from './utils';
 import {toAptoTransaction, toBlockTx} from "./mapper";
+import {buildMemoryStorage, setupCache} from 'axios-cache-interceptor'
+import Axios from 'axios';
+import {CachedAPIRequester} from "./cached-api-requester";
 
 // Configuration interface
 export interface AppConfig {
@@ -39,43 +43,27 @@ const DEFAULT_CONFIG: AppConfig = {
  */
 export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     const app = express();
+    app.use(express.json());
+
+    let apiRequester: APIRequester
+
+    // Add cache performance route if caching is enabled
+    if (config.cacheEnabled) {
+        apiRequester = new CachedAPIRequester(config)
+    } else {
+        apiRequester = new APIRequester(config.endpoint);
+    }
 
     // Initialize REST client with the configured endpoint
     const rest = new RESTClient(config.endpoint, {
         chainId: config.chainId,
-    });
+    }, apiRequester);
 
-    const txApi = new TxAPI(rest);
-    const moveApi = new MoveAPI(rest.apiRequester);
-
-    app.use(express.json());
-
-    // Initialize cache middleware if enabled
-    const cache = apicache.middleware;
-    const cacheMiddleware = config.cacheEnabled ? cache(config.cacheDuration || '5 minutes') : (req: Request, res: Response, next: Function) => next();
-
-    // Add cache performance route if caching is enabled
-    if (config.cacheEnabled) {
-        app.get('/api/cache/performance', (req: Request, res: Response) => {
-            res.json(apicache.getPerformance());
-        });
-
-        app.get('/api/cache/index', (req: Request, res: Response) => {
-            res.json(apicache.getIndex());
-        });
-
-        app.get('/api/cache/clear/:target', (req: Request, res: Response) => {
-            res.json(apicache.clear(req.params.target));
-        });
-
-        app.get('/api/cache/clear', (req: Request, res: Response) => {
-            const target = req.query.target as string;
-            res.json(apicache.clear(target || undefined));
-        });
-    }
+    const txApi = rest.tx
+    const moveApi = rest.move
 
     // V1 endpoint - Latest Initia transaction to Aptos node info
-    app.get('/v1', cacheMiddleware, async function (req: Request, res: Response) {
+    app.get('/v1', async function (req: Request, res: Response) {
         try {
             const blockInfo = await rest.tendermint.blockInfo();
             const header = blockInfo.block.header as any;
@@ -107,7 +95,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     });
 
     // Block by height endpoint - Returns block data in Aptos format
-    app.get('/v1/blocks/by_height/:height', cacheMiddleware, async (req: Request, res: Response): Promise<void> => {
+    app.get('/v1/blocks/by_height/:height', async (req: Request, res: Response): Promise<void> => {
         try {
             const height = req.params.height;
 
@@ -156,7 +144,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         }
     });
 
-    app.get('/v1/accounts/:address/modules', cacheMiddleware, async (req: Request, res: Response) => {
+    app.get('/v1/accounts/:address/modules', async (req: Request, res: Response) => {
         try {
             let next: string | undefined = undefined;
             let result: MoveModuleBytecode[] = [];
@@ -182,7 +170,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         }
     });
 
-    app.get('/v1/transactions/by_version/:version', cacheMiddleware, async (req: Request, res: Response) => {
+    app.get('/v1/transactions/by_version/:version', async (req: Request, res: Response) => {
         try {
             const version = req.params.version?.trim();
             // convert version back to block height and index
@@ -266,5 +254,3 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     return app;
 }
 
-// Create default app instance
-export const app = createApp();

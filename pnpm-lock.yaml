@@ -17,9 +17,15 @@ importers:
       '@types/node':
         specifier: ^22.15.17
         version: 22.15.17
-      apicache:
-        specifier: ^1.6.3
-        version: 1.6.3
+      axios:
+        specifier: ^1.9.0
+        version: 1.9.0
+      axios-cache-adapter-fixed:
+        specifier: ^1.0.8
+        version: 1.0.8
+      axios-cache-interceptor:
+        specifier: ^1.8.0
+        version: 1.8.0(axios@1.9.0)
       commander:
         specifier: ^13.1.0
         version: 13.1.0
@@ -36,6 +42,9 @@ importers:
       '@types/apicache':
         specifier: ^1.6.7
         version: 1.6.7
+      '@types/axios':
+        specifier: ^0.14.4
+        version: 0.14.4
       '@types/express':
         specifier: ^5.0.1
         version: 5.0.1
@@ -475,6 +484,10 @@ packages:
   '@types/apicache@1.6.7':
     resolution: {integrity: sha512-V2RIIUE0ETIQoMh79hE30+PVL+M5ulvYTZowbLz0h1nDHPucpIcYfMnmfbA24QshkFYCWlaI+7aCa7NwauZsvQ==}
 
+  '@types/axios@0.14.4':
+    resolution: {integrity: sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==}
+    deprecated: This is a stub types definition. axios provides its own type definitions, so you do not need this installed.
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -604,10 +617,6 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  apicache@1.6.3:
-    resolution: {integrity: sha512-jS3VfUFpQ9BesFQZcdd1vVYg3ZsO2kGPmTJHqycIYPAQs54r74CRiyj8DuzJpwzLwIfCBYzh4dy9Jt8xYbo27w==}
-    engines: {node: '>=8'}
-
   arg@4.1.3:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
 
@@ -622,6 +631,18 @@ packages:
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+
+  axios-cache-adapter-fixed@1.0.8:
+    resolution: {integrity: sha512-+gaT/YbnJdxvO6WEfVc+o6YcDupZP5YZU7Id5itpEjK7w3FCFDRGWXKecEi5GAyWfElH8u0pRhr+uNuOvJx3rQ==}
+
+  axios-cache-interceptor@1.8.0:
+    resolution: {integrity: sha512-cTNnPGJyQkxnWp0EWvE3NRvgURU5cWw/Qx3dIhXyHSM4Ip0c7EEe0I3an0Jwa549m1CAOg57ibj27YRNLmQCcg==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      axios: ^1
+
+  axios@0.27.2:
+    resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
 
   axios@1.9.0:
     resolution: {integrity: sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==}
@@ -727,6 +748,12 @@ packages:
     resolution: {integrity: sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==}
     engines: {node: '>= 0.8'}
 
+  cache-control-esm@1.0.0:
+    resolution: {integrity: sha512-Fa3UV4+eIk4EOih8FTV6EEsVKO0W5XWtNs6FC3InTfVz+EjurjPfDXY5wZDo/lxjDxg5RjNcurLyxEJBcEUx9g==}
+
+  cache-parser@1.2.5:
+    resolution: {integrity: sha512-Md/4VhAHByQ9frQ15WD6LrMNiVw9AEl/J7vWIXw+sxT6fSOpbtt6LHTp76vy8+bOESPBO94117Hm2bIjlI7XjA==}
+
   cacheable-lookup@5.0.4:
     resolution: {integrity: sha512-2/kNscPhpcxrOigMZzbiWF7dz8ilhb/nIHU3EyZiXWXpeq/au8qJ8VhdftMkty3n7Gj6HIGalQG8oiBNB3AJgA==}
     engines: {node: '>=10.6.0'}
@@ -765,6 +792,9 @@ packages:
   char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
     engines: {node: '>=10'}
+
+  charenc@0.0.2:
+    resolution: {integrity: sha512-yrLQ/yVUFXkzg7EDQsPieE/53+0RlaWTs+wBrvW36cyilJ2SaDWfl4Yj7MtLTXleV9uEKefbAGUPv2/iWSooRA==}
 
   ci-info@3.9.0:
     resolution: {integrity: sha512-NIxF55hv4nSqQswkAeiOi1r83xy8JldOFDTWiug55KBu9Jnblncd2U6ViHmYgHf01TPZS77NJBhBMKdWj9HQMQ==}
@@ -845,6 +875,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  crypt@0.0.2:
+    resolution: {integrity: sha512-mCxBlsHFYh9C+HVpiEacem8FEBnMXgU9gy4zmNC+SXAZNB/1idgp/aulFJ4FgCi7GPEVbfyng092GqL2k2rmow==}
 
   debug@4.4.0:
     resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
@@ -991,6 +1024,9 @@ packages:
   express@5.1.0:
     resolution: {integrity: sha512-DT9ck5YIRU+8GYzzU5kT3eHGA5iL+1Zd0EutOmTE9Dtk+Tvuzd23VBU+ec7HPNSTxXYO55gPV/hq4pSBJDjFpA==}
     engines: {node: '>= 18'}
+
+  fast-defer@1.1.8:
+    resolution: {integrity: sha512-lEJeOH5VL5R09j6AA0D4Uvq7AgsHw0dAImQQ+F3iSyHZuAxyQfWobsagGpTcOPvJr3urmKRHrs+Gs9hV+/Qm/Q==}
 
   fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
@@ -1175,6 +1211,9 @@ packages:
 
   is-arrayish@0.2.1:
     resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
+
+  is-buffer@1.1.6:
+    resolution: {integrity: sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==}
 
   is-core-module@2.16.1:
     resolution: {integrity: sha512-UfoeMA6fIJ8wTYFEUjelnaGI67v6+N7qXJEvQuIGa99l4xsCruSYOVSQ0uPANn4dAzm8lkYPaKLrrijLq7x23w==}
@@ -1452,6 +1491,9 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
+  md5@2.3.0:
+    resolution: {integrity: sha512-T1GITYmFaKuO91vxyoQMFETst+O71VUPEU3ze5GNzDm0OWdP8v1ziTaAEPUr/3kLsY3Sftgz242A1SetQiDL7g==}
+
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
@@ -1558,6 +1600,9 @@ packages:
   npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
     engines: {node: '>=8'}
+
+  object-code@1.3.3:
+    resolution: {integrity: sha512-/Ds4Xd5xzrtUOJ+xJQ57iAy0BZsZltOHssnDgcZ8DOhgh41q1YJCnTPnWdWSLkNGNnxYzhYChjc5dgC9mEERCA==}
 
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
@@ -2635,6 +2680,12 @@ snapshots:
       '@types/express': 5.0.1
       '@types/redis': 2.8.32
 
+  '@types/axios@0.14.4':
+    dependencies:
+      axios: 1.9.0
+    transitivePeerDependencies:
+      - debug
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.27.2
@@ -2793,8 +2844,6 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  apicache@1.6.3: {}
-
   arg@4.1.3: {}
 
   argparse@1.0.10:
@@ -2806,6 +2855,28 @@ snapshots:
   async@3.2.6: {}
 
   asynckit@0.4.0: {}
+
+  axios-cache-adapter-fixed@1.0.8:
+    dependencies:
+      axios: 0.27.2
+      cache-control-esm: 1.0.0
+      md5: 2.3.0
+    transitivePeerDependencies:
+      - debug
+
+  axios-cache-interceptor@1.8.0(axios@1.9.0):
+    dependencies:
+      axios: 1.9.0
+      cache-parser: 1.2.5
+      fast-defer: 1.1.8
+      object-code: 1.3.3
+
+  axios@0.27.2:
+    dependencies:
+      follow-redirects: 1.15.9
+      form-data: 4.0.2
+    transitivePeerDependencies:
+      - debug
 
   axios@1.9.0:
     dependencies:
@@ -2962,6 +3033,10 @@ snapshots:
 
   bytes@3.1.2: {}
 
+  cache-control-esm@1.0.0: {}
+
+  cache-parser@1.2.5: {}
+
   cacheable-lookup@5.0.4: {}
 
   cacheable-request@7.0.4:
@@ -2998,6 +3073,8 @@ snapshots:
       supports-color: 7.2.0
 
   char-regex@1.0.2: {}
+
+  charenc@0.0.2: {}
 
   ci-info@3.9.0: {}
 
@@ -3071,6 +3148,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  crypt@0.0.2: {}
 
   debug@4.4.0:
     dependencies:
@@ -3221,6 +3300,8 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+
+  fast-defer@1.1.8: {}
 
   fast-json-stable-stringify@2.1.0: {}
 
@@ -3412,6 +3493,8 @@ snapshots:
   ipaddr.js@1.9.1: {}
 
   is-arrayish@0.2.1: {}
+
+  is-buffer@1.1.6: {}
 
   is-core-module@2.16.1:
     dependencies:
@@ -3859,6 +3942,12 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  md5@2.3.0:
+    dependencies:
+      charenc: 0.0.2
+      crypt: 0.0.2
+      is-buffer: 1.1.6
+
   media-typer@1.1.0: {}
 
   merge-descriptors@2.0.0: {}
@@ -3933,6 +4022,8 @@ snapshots:
   npm-run-path@4.0.1:
     dependencies:
       path-key: 3.1.1
+
+  object-code@1.3.3: {}
 
   object-inspect@1.13.4: {}
 
