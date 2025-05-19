@@ -13,7 +13,8 @@ program
   .option('-c, --chain-id <string>', 'Chain ID for Initia', 'echelon-1')
   .option('-e, --endpoint <url>', 'indexer endpoint', 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz')
   .option('--cache-enabled <boolean>', 'Enable API response caching', 'true')
-  .option('--cache-duration <string>', 'Cache duration in plain English (e.g. "5 minutes", "1 hour")', '5 minutes');
+  .option('--cache-duration <string>', 'Cache duration in plain English (e.g. "5 minutes", "1 hour")', '5 minutes')
+  .option('-d, --debug', 'Enable debug mode with request logging', false);
 
 program.action(() => {
   const options = program.opts();
@@ -25,12 +26,13 @@ program.action(() => {
     chainId: options.chainId,
     endpoint: options.endpoint,
     cacheEnabled: options.cacheEnabled === 'true',
-    cacheDuration: options.cacheDuration
+    cacheDuration: options.cacheDuration,
+    debug: options.debug
   });
 
   // Start the server
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}, version ${version}`);
+    console.log(`Server running on port ${PORT}, version ${version}${options.debug ? ' (debug mode enabled)' : ''}`);
   });
 });
 

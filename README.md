@@ -21,6 +21,9 @@ pnpm dev
 
 # Start with custom options
 pnpm start -- --port 4000 --cache-enabled true --cache-duration "10 minutes"
+
+# Start with debug mode enabled (logs all requests)
+pnpm start -- --debug
 ```
 
 ### Command Line Options
@@ -30,6 +33,7 @@ pnpm start -- --port 4000 --cache-enabled true --cache-duration "10 minutes"
 - `-e, --endpoint <url>` - Indexer endpoint URL
 - `--cache-enabled <boolean>` - Enable API response caching (default: true)
 - `--cache-duration <string>` - Cache duration in plain English (default: "5 minutes")
+- `-d, --debug` - Enable debug mode with request logging
 
 ## API Endpoints
 

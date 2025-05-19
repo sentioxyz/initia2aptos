@@ -14,6 +14,7 @@ import {version} from '../package.json';
 import {parseTimestampToMicroSeconds} from './utils';
 import {toAptoTransaction, toBlockTx} from "./mapper";
 import {CachedAPIRequester} from "./cached-api-requester";
+import errorhandler from 'errorhandler'
 
 // Configuration interface
 export interface AppConfig {
@@ -22,6 +23,8 @@ export interface AppConfig {
     endpoint: string;
     cacheEnabled?: boolean;
     cacheDuration?: string;
+    debug?: boolean;
+    logErrors?: boolean;
 }
 
 // Default configuration
@@ -30,18 +33,30 @@ const DEFAULT_CONFIG: AppConfig = {
     chainId: 'echelon-1',
     endpoint: 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz',
     cacheEnabled: true,
-    cacheDuration: '5 minutes'
+    cacheDuration: '5 minutes',
+    debug: false,
+    logErrors: true
 };
 
 
-/**
- * Creates an Express application with the given configuration
- * @param config Configuration for the app (port, chainId, endpoint)
- * @returns Configured Express application
- */
 export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     const app = express();
     app.use(express.json());
+
+    if (config.debug) {
+        // logger middleware
+        app.use((req, res, next) => {
+            console.info({
+                method: req.method,
+                path: req.path,
+                query: req.query,
+                body: req.body,
+            });
+            next();
+        });
+    }
+
+    app.use(errorhandler())
 
     let apiRequester: APIRequester
 
