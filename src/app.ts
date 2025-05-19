@@ -11,10 +11,8 @@ import {
     UserTransactionResponse
 } from "@aptos-labs/ts-sdk";
 import {version} from '../package.json';
-import {parseTimestampToMicroSeconds, toDurationMs} from './utils';
+import {parseTimestampToMicroSeconds} from './utils';
 import {toAptoTransaction, toBlockTx} from "./mapper";
-import {buildMemoryStorage, setupCache} from 'axios-cache-interceptor'
-import Axios from 'axios';
 import {CachedAPIRequester} from "./cached-api-requester";
 
 // Configuration interface
@@ -148,6 +146,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         try {
             let next: string | undefined = undefined;
             let result: MoveModuleBytecode[] = [];
+
             do {
                 const address = req.params.address;
                 const [modules, pagination] = await moveApi.modules(address, {next_key: next});
@@ -160,6 +159,67 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                 }
             } while (next);
             res.json(result);
+        } catch (error) {
+            console.error(`Error fetching modules for account ${req.params.address}:`, error);
+            res.status(500).json({
+                message: `Failed to fetch modules for account ${req.params.address}`,
+                error_code: 'internal_error',
+                vm_error_code: error
+            });
+        }
+    });
+
+    app.get('/v1/accounts/:address/module/:module', async (req: Request, res: Response) => {
+        try {
+            const address = req.params.address;
+            const m = req.params.module;
+            const module = await moveApi.module(address, m, {})
+
+            res.json({
+                abi: JSON.parse(module.abi),
+                bytecode: module.raw_bytes
+            });
+        } catch (error) {
+            console.error(`Error fetching modules for account ${req.params.address}:`, error);
+            res.status(500).json({
+                message: `Failed to fetch modules for account ${req.params.address}`,
+                error_code: 'internal_error',
+                vm_error_code: error
+            });
+        }
+    });
+
+    app.get('/v1/accounts/:address/resources', async (req: Request, res: Response) => {
+        try {
+            const address = req.params.address;
+            let ret: any[] = []
+            let next: any = undefined
+            do {
+                const [resources, pagination] = await moveApi.resources(address, {next_key: next})
+                next = pagination.next_key;
+                ret = ret.concat(resources);
+            } while (next);
+
+            res.json(ret);
+        } catch (error) {
+            console.error(`Error fetching modules for account ${req.params.address}:`, error);
+            res.status(500).json({
+                message: `Failed to fetch modules for account ${req.params.address}`,
+                error_code: 'internal_error',
+                vm_error_code: error
+            });
+        }
+    })
+    app.get('/v1/accounts/:address/resource/:resource', async (req: Request, res: Response) => {
+        try {
+            const address = req.params.address;
+            const r = req.params.resource;
+            const {type, data} = await moveApi.resource(address, r, {})
+
+            res.json({
+                type,
+                data
+            });
         } catch (error) {
             console.error(`Error fetching modules for account ${req.params.address}:`, error);
             res.status(500).json({
