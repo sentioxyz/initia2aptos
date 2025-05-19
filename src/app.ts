@@ -88,7 +88,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
       const aptosLedgerInfo: LedgerInfo = {
         chain_id: 1, // requires number
         epoch: '1',
-        ledger_version: latestTxVersion.toString(),
+        ledger_version: "10000",
         oldest_ledger_version: '1',
         ledger_timestamp: parseTimestampToMicroSeconds(header.time),
         node_role: RoleType.FULL_NODE,
