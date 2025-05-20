@@ -104,7 +104,7 @@ jest.mock('@initia/initia.js', () => {
           data: { result: 'mock-view-result' }
         })),
         viewJSON: jest.fn().mockImplementation((address: string, module: string, func: string, typeArgs: string[], args: any[]) => ({
-          data: { result: 'mock-view-result' }
+          data: JSON.stringify({ result: 'mock-view-result' })
         }))
       }
     }))
