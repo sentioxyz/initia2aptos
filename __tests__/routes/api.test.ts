@@ -99,6 +99,9 @@ jest.mock('@initia/initia.js', () => {
         resource: jest.fn().mockImplementation(() => ({
           type: 'test::resource::Type',
           data: { value: 100 }
+        })),
+        view: jest.fn().mockImplementation((address: string, module: string, func: string, typeArgs: string[], args: any[]) => ({
+          data: { result: 'mock-view-result' }
         }))
       }
     }))
@@ -130,6 +133,7 @@ describe('API Routes', () => {
       expect(response.body).toHaveProperty('endpoints');
       expect(response.body.endpoints).toHaveProperty('nodeInfo', '/v1');
       expect(response.body.endpoints).toHaveProperty('blockByHeight', '/v1/blocks/by_height/:height');
+      expect(response.body.endpoints).toHaveProperty('viewFunction', '/v1/view');
     });
   });
 
@@ -178,6 +182,31 @@ describe('API Routes', () => {
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toHaveProperty('abi');
       expect(response.body[0]).toHaveProperty('bytecode', 'mock-bytecode');
+    });
+  });
+
+  describe('POST /v1/view', () => {
+    it('should handle JSON view function requests', async () => {
+      const response = await request(app)
+        .post('/v1/view')
+        .send({
+          function: '0x1::coin::module_function',
+          type_arguments: ['0x1::aptos_coin::AptosCoin'],
+          arguments: ['0x123']
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('result', 'mock-view-result');
+    });
+
+    it('should handle BCS-encoded view function requests with 501 Not Implemented', async () => {
+      const response = await request(app)
+        .post('/v1/view')
+        .set('Content-Type', 'application/x.aptos.view_function+bcs')
+        .send(Buffer.from('mock-bcs-data'));
+
+      expect(response.status).toBe(501);
+      expect(response.body).toHaveProperty('error_code', 'not_implemented');
     });
   });
 

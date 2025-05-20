@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express';
+import express, {NextFunction, raw, Request, Response} from 'express';
 import {APIRequester, RESTClient} from '@initia/initia.js';
 import {
     Block,
@@ -42,6 +42,16 @@ const DEFAULT_CONFIG: AppConfig = {
 export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     const app = express();
     app.use(express.json());
+    
+    // Add body parser for BCS-encoded view function requests
+    app.use('/v1/view', (req: Request, res: Response, next: NextFunction) => {
+        const contentType = req.headers['content-type'];
+        if (contentType === 'application/x.aptos.view_function+bcs') {
+            raw({ type: 'application/x.aptos.view_function+bcs' })(req, res, next);
+        } else {
+            next();
+        }
+    });
 
     if (config.debug) {
         // logger middleware
@@ -243,27 +253,54 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
         }
     });
 
-    app.post('/v1/view', async (req: Request, res: Response) => {
-        try {
-            const body = req.body;
-            const [address, module, func] = body['function'].split('::');
-            const result = await moveApi.view(
-                address,
-                module,
-                func,
-                body.type_arguments ?? [],
-                body.arguments ?? []
-            );
-            res.json(result.data);
-        } catch (error) {
-            console.error(`Error simulating transaction:`, error);
-            res.status(500).json({
-                message: `Failed to call view function`,
-                error_code: 'internal_error',
-                vm_error_code: error
-            });
-        }
-    })
+    // View function endpoint - supports both JSON and BCS-encoded requests
+    app.post('/v1/view', function(req: Request, res: Response) {
+        (async function() {
+            try {
+                const contentType = req.headers['content-type'];
+                let typeArguments: string[] = [];
+                let args: any[] = [];
+
+                if (contentType === 'application/json') {
+                    const body = req.body;
+                    const [address, module, func] = body['function'].split('::');
+                    typeArguments = body.type_arguments ?? [];
+                    args = body.arguments ?? [];
+
+                    const result = await moveApi.view(
+                        address,
+                        module,
+                        func,
+                        typeArguments,
+                        args
+                    );
+                    res.json(result.data);
+                } else {
+                    // handle BCS-encoded requests
+                    // const deserializer = new Deserializer(req.body);
+                    // const func  = EntryFunction.deserialize(deserializer)
+                    // const result = await moveApi.view(
+                    //     func.module_name.address.toString(),
+                    //     func.module_name.name.toString(),
+                    //     func.function_name.toString(),
+                    //     func.type_args.map(t => t.toString()),
+                    //     func.args.map(t => t.toString()),
+                    // )
+                    res.status(400).json({
+                        message: "Unsupported content type" + contentType,
+                        error_code: 'not_implemented',
+                    })
+                }
+            } catch (error) {
+                console.error(`Error processing view function:`, error, "body", req.body);
+                res.status(400).json({
+                    message: `Failed to call view function， body:` + JSON.stringify(req.body),
+                    error_code: 'internal_error',
+                    vm_error_code: error
+                });
+            }
+        })();
+    });
 
     app.get('/v1/transactions/by_version/:version', async (req: Request, res: Response) => {
         try {
@@ -318,7 +355,8 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
             endpoints: {
                 nodeInfo: '/v1',
                 blockByHeight: '/v1/blocks/by_height/:height', // Returns block data in Aptos format
-                accountModules: '/v1/accounts/:address/modules'
+                accountModules: '/v1/accounts/:address/modules',
+                viewFunction: '/v1/view' // Supports both JSON and BCS-encoded requests
             },
             config: {
                 endpoint: config.endpoint
@@ -339,4 +377,3 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
 
     return app;
 }
-
