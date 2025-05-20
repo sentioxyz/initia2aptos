@@ -42,7 +42,7 @@ const DEFAULT_CONFIG: AppConfig = {
 export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     const app = express();
     app.use(express.json());
-    
+
     // Add body parser for BCS-encoded view function requests
     app.use('/v1/view', (req: Request, res: Response, next: NextFunction) => {
         const contentType = req.headers['content-type'];
@@ -83,13 +83,21 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     const txApi = rest.tx
     const moveApi = rest.move
 
-    // V1 endpoint - Latest Initia transaction to Aptos node info
+    // V1 endpoint - Latest Initia transaction to Aptos node info (no caching)
     app.get('/v1', async function (req: Request, res: Response) {
         try {
-            const blockInfo = await rest.tendermint.blockInfo();
+            // Create a non-cached API requester specifically for this endpoint
+            const noCacheRequester = new APIRequester(config.endpoint);
+
+            // Create a REST client with the non-cached requester
+            const noCacheRest = new RESTClient(config.endpoint, {
+                chainId: config.chainId,
+            }, noCacheRequester);
+
+            const blockInfo = await noCacheRest.tendermint.blockInfo();
             const header = blockInfo.block.header as any;
 
-            const txs = await txApi.txInfosByHeight(parseInt(header.height));
+            const txs = await noCacheRest.tx.txInfosByHeight(parseInt(header.height));
             const latestTxVersion = 10000n * BigInt(header.height) + BigInt(txs.length);
 
             // map latestTxInfo to aptos LedgerInfo
