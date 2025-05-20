@@ -267,7 +267,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                     typeArguments = body.type_arguments ?? [];
                     args = body.arguments ?? [];
 
-                    const result = await moveApi.view(
+                    const result = await moveApi.viewJSON(
                         address,
                         module,
                         func,
