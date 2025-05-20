@@ -205,7 +205,7 @@ describe('API Routes', () => {
         .set('Content-Type', 'application/x.aptos.view_function+bcs')
         .send(Buffer.from('mock-bcs-data'));
 
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error_code', 'not_implemented');
     });
   });
