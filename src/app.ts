@@ -280,9 +280,9 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                         module,
                         func,
                         typeArguments,
-                        args
+                        args.map(a => JSON.stringify(a))
                     );
-                    res.json(result.data);
+                    res.json(JSON.parse(result.data));
                 } else {
                     // handle BCS-encoded requests
                     // const deserializer = new Deserializer(req.body);
