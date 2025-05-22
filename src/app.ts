@@ -47,7 +47,7 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     app.use('/v1/view', (req: Request, res: Response, next: NextFunction) => {
         const contentType = req.headers['content-type'];
         if (contentType === 'application/x.aptos.view_function+bcs') {
-            raw({ type: 'application/x.aptos.view_function+bcs' })(req, res, next);
+            raw({type: 'application/x.aptos.view_function+bcs'})(req, res, next);
         } else {
             next();
         }
@@ -262,12 +262,17 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     });
 
     // View function endpoint - supports both JSON and BCS-encoded requests
-    app.post('/v1/view', function(req: Request, res: Response) {
-        (async function() {
+    app.post('/v1/view', function (req: Request, res: Response) {
+        (async function () {
             try {
                 const contentType = req.headers['content-type'];
                 let typeArguments: string[] = [];
                 let args: any[] = [];
+                const ledgeVersion = req.query['ledger_version']
+                let height = undefined
+                if (ledgeVersion) {
+                    height = Math.floor(parseInt(ledgeVersion as string) / 10000);
+                }
 
                 if (contentType === 'application/json') {
                     const body = req.body;
@@ -280,7 +285,8 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
                         module,
                         func,
                         typeArguments,
-                        args.map(a => JSON.stringify(a))
+                        args.map(a => JSON.stringify(a)),
+                        height ? {"x-cosmos-block-height": `${height}`} : undefined
                     );
                     res.json(JSON.parse(result.data));
                 } else {
