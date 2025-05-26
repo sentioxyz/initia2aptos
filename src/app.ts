@@ -321,7 +321,13 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
             const version = req.params.version?.trim();
             // convert version back to block height and index
             const height = Math.floor(parseInt(version) / 10000);
-
+            if (isNaN(height) || height < 1) {
+                res.status(400).json({
+                    message: 'Invalid version parameter. Must be a valid number.',
+                    error_code: 'invalid_version'
+                });
+                return;
+            }
             const index = parseInt(version) % 10000;
             if (index == 0) { // block metadata transaction
                 const blockInfo = await rest.tendermint.blockInfo(height);
