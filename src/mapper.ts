@@ -67,7 +67,7 @@ export function toAptoTransaction(tx: TxInfo, version: bigint, seq: number): Use
             resultTx.sender = msgData.sender;
             resultTx.payload = {
                 type: 'entry_function_payload',
-                function: `${msgData.module_name}::${msgData.function_name}`,
+                function: `${msgData.module_address}::${msgData.module_name}::${msgData.function_name}`,
                 type_arguments: msgData.type_args || [],
                 arguments: msgData.args || []
             } as EntryFunctionPayloadResponse;
