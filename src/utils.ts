@@ -1,21 +1,9 @@
-import {TxInfo} from '@initia/initia.js';
-import {AccountAddress} from '@aptos-labs/ts-sdk';
 
-/**
- * Finds the sender address from a transaction
- * @param tx The transaction info
- * @returns The sender address in hex format
- */
-export function findSender(tx: TxInfo): string {
-    for (const msg of tx.tx.body.messages) {
-        if ("sender" in msg) {
-            // remove init1 prefix
-            const sender = msg.sender.replace("init1", "")
-            // decode base64 to hex
-            return Buffer.from(sender, 'base64').toString('hex')
-        }
-    }
-    return AccountAddress.ZERO.toString()
+
+export function toAptosAddress(s: string): string {
+    const sender = s.replace("init1", "")
+    // decode base64 to hex
+    return Buffer.from(sender, 'base64').toString('hex')
 }
 
 /**

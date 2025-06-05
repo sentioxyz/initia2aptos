@@ -7,7 +7,7 @@ import {
     UserTransactionResponse,
     EntryFunctionPayloadResponse
 } from '@aptos-labs/ts-sdk';
-import {findSender, parseTimestampToMicroSeconds} from "./utils";
+import { parseTimestampToMicroSeconds, toAptosAddress} from "./utils";
 
 export function mapEvents(events: InitiaEvent[]): Event[] {
     if (!events || events.length === 0) {
@@ -40,7 +40,7 @@ export function toAptoTransaction(tx: TxInfo, version: bigint, seq: number): Use
         timestamp: parseTimestampToMicroSeconds(tx.timestamp),
         success: true,
         vm_status: '',
-        sender: findSender(tx),
+        sender:  AccountAddress.ZERO.toString(),
         sequence_number: '' + seq,
         state_change_hash: '',
         event_root_hash: '',
@@ -64,7 +64,7 @@ export function toAptoTransaction(tx: TxInfo, version: bigint, seq: number): Use
         const m = msg as any;
         if (m.module_address && m.module_name && m.function_name) {
             const msgData = m as MsgExecute.Data;
-            resultTx.sender = findSender(tx);
+            resultTx.sender = toAptosAddress(msgData.sender);
             resultTx.payload = {
                 type: 'entry_function_payload',
                 function: `${msgData.module_address}::${msgData.module_name}::${msgData.function_name}`,
