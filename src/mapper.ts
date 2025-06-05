@@ -64,7 +64,7 @@ export function toAptoTransaction(tx: TxInfo, version: bigint, seq: number): Use
         const m = msg as any;
         if (m.module_address && m.module_name && m.function_name) {
             const msgData = m as MsgExecute.Data;
-            resultTx.sender = msgData.sender;
+            resultTx.sender = findSender(tx);
             resultTx.payload = {
                 type: 'entry_function_payload',
                 function: `${msgData.module_address}::${msgData.module_name}::${msgData.function_name}`,
