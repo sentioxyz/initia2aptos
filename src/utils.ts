@@ -1,9 +1,16 @@
-
+import { bech32 } from 'bech32';
 
 export function toAptosAddress(s: string): string {
-    const sender = s.replace("init1", "")
-    // decode base64 to hex
-    return Buffer.from(sender, 'base64').toString('hex')
+    return bech32ToHex(s);
+}
+
+function bech32ToHex(bech32Addr: string): string {
+    // Decode the bech32 address
+    const { words } = bech32.decode(bech32Addr);
+    // Convert 5-bit words back to bytes
+    const bytes = bech32.fromWords(words);
+    // Convert bytes to hex string
+    return '0x' + Buffer.from(bytes).toString('hex');
 }
 
 /**
