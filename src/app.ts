@@ -21,6 +21,7 @@ export interface AppConfig {
     port: string;
     chainId: string;
     endpoint: string;
+    fallbackEndpoint?: string;
     cacheEnabled?: boolean;
     cacheDuration?: string;
     debug?: boolean;
@@ -71,9 +72,9 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
     let apiRequester: APIRequester
 
     // Set up API requester based on cache configuration
-    apiRequester = config.cacheEnabled
-        ? new CachedAPIRequester(config)
-        : new APIRequester(config.endpoint);
+    // Always use CachedAPIRequester so it can handle fallback endpoint and
+    // optionally apply caching based on config.cacheEnabled.
+    apiRequester = new CachedAPIRequester(config);
 
     // Initialize REST client with the configured endpoint
     const rest = new RESTClient(config.endpoint, {
@@ -138,8 +139,8 @@ export function createApp(config: AppConfig = DEFAULT_CONFIG) {
             }
 
             // Fetch transactions by height
-            const txs = await txApi.txInfosByHeight(parseInt(height));
             const blockInfo = await rest.tendermint.blockInfo(parseInt(height));
+            const txs = await txApi.txInfosByHeight(parseInt(height));
 
             const userTxs: UserTransactionResponse[] = [];
 
