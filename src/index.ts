@@ -12,7 +12,7 @@ program
   .option('-p, --port <number>', 'Port to run the server on', '3000')
   .option('-c, --chain-id <string>', 'Chain ID for Initia', 'echelon-1')
   .option('-e, --endpoint <url>', 'indexer endpoint', 'https://archival-rest-echelon-1.anvil.asia-southeast.initia.xyz')
-  .option('-f, --fallback-endpoint <url>', 'indexer endpoint', 'https://rest-echelon-1.anvil.asia-southeast.initia.xyz')
+  .option('-f, --fallback-endpoint <url>', 'indexer endpoint', 'https://sequencer-rest-0-echelon-1.anvil.asia-southeast.initia.xyz')
   .option('--cache-enabled <boolean>', 'Enable API response caching', 'true')
   .option('--cache-duration <string>', 'Cache duration in plain English (e.g. "5 minutes", "1 hour")', '5 minutes')
   .option('-d, --debug', 'Enable debug mode with request logging', false);
