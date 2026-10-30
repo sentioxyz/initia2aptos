@@ -1,6 +1,7 @@
 name: Node.js CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
@@ -9,6 +10,8 @@ on:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
     permissions:
       id-token: write
       contents: read
@@ -35,23 +38,24 @@ jobs:
     - name: Run tests
       run: pnpm test
 
-    - name: Publish RC to npm
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    - name: Publish to npm
+      id: publish
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
       run: |
-        # Get current version (remove quotes if present)
-        current_version=$(pnpm pkg get version | tr -d '"')
-        # Construct new version string
-        new_version="$current_version-rc.${{ github.run_number }}"
-        echo "Setting version to $new_version"
-        # Update package.json with the new version
-        pnpm version $new_version --git-tag-version=false
-        # Publish the package with the 'rc' tag
-        pnpm publish --tag rc --no-git-checks
+        version=$(node -p "require('./package.json').version")
+        dist_tag=latest
+        if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+          version="$version-rc.$GITHUB_RUN_NUMBER"
+          dist_tag=rc
+        fi
+        pnpm pkg set version="$version"
+        pnpm publish --tag "$dist_tag" --no-git-checks
+        echo "version=$version" >> "$GITHUB_OUTPUT"
 
   docker:
     runs-on: ubuntu-latest
     needs: test-and-build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -59,13 +63,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
-    - name: Get version
-      id: version
-      run: |
-        current_version=$(node -p "require('./package.json').version")
-        version="${current_version}-rc.${{ github.run_number }}"
-        echo "version=$version" >> $GITHUB_OUTPUT
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
@@ -81,4 +78,4 @@ jobs:
         push: true
         tags: |
           ghcr.io/sentioxyz/initial-aptos:latest
-          ghcr.io/sentioxyz/initial-aptos:${{ steps.version.outputs.version }}
+          ghcr.io/sentioxyz/initial-aptos:${{ needs.test-and-build.outputs.version }}
