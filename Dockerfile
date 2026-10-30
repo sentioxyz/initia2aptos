@@ -1,8 +1,8 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:26.13.0-alpine AS builder
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
+RUN npm install --global corepack@0.34.6 && corepack enable && corepack prepare pnpm@10.10.0 --activate
 
 WORKDIR /app
 
@@ -20,10 +20,10 @@ COPY src ./src
 RUN pnpm run build
 
 # Production stage
-FROM node:20-alpine AS production
+FROM node:26.13.0-alpine AS production
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.10.0 --activate
+RUN npm install --global corepack@0.34.6 && corepack enable && corepack prepare pnpm@10.10.0 --activate
 
 WORKDIR /app
 
